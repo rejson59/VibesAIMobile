@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>vibes.ai · mobile viewer</title>
-  <meta name="description" content="Mobilna nakładka przeglądająca oryginalną stronę vibes.ai — bez kopii treści, strona ładowana jest na żywo z vibes.ai." />
+  <meta name="description" content="Mobilny podgląd oryginalnej strony vibes.ai: replay z archive.org (domyślnie), żywy czytnik przez proxy CORS oraz link do oryginału." />
   <meta name="theme-color" content="#0b0b0f" />
   <meta name="color-scheme" content="dark" />
   <meta name="mobile-web-app-capable" content="yes" />
@@ -15,15 +15,19 @@
     :root {
       --bg: #0b0b0f;
       --bar: rgba(14, 14, 20, 0.92);
+      --panel: #14141c;
       --line: rgba(255, 255, 255, 0.12);
       --text: #f4f4f7;
       --muted: #9d9db0;
+      --faint: #6d6d80;
       --accent: #ec4899;
+      --ok: #34d399;
+      --warn: #f59e0b;
       --safe-t: env(safe-area-inset-top, 0px);
       --safe-b: env(safe-area-inset-bottom, 0px);
       --safe-l: env(safe-area-inset-left, 0px);
       --safe-r: env(safe-area-inset-right, 0px);
-      --tap: 46px;
+      --tap: 44px;
     }
     *, *::before, *::after { box-sizing: border-box; }
     html { -webkit-text-size-adjust: 100%; }
@@ -38,136 +42,170 @@
       overscroll-behavior: none;
       -webkit-tap-highlight-color: transparent;
     }
-    button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+    button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
     a { color: inherit; }
     :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
+    [hidden] { display: none !important; }
 
     /* ---------- top bar ---------- */
     .bar {
-      display: flex; align-items: center; justify-content: space-between; gap: 8px;
-      min-height: calc(52px + var(--safe-t));
-      padding: var(--safe-t) calc(10px + var(--safe-r)) 6px calc(12px + var(--safe-l));
+      display: flex; align-items: center; justify-content: space-between; gap: 6px;
+      min-height: calc(50px + var(--safe-t));
+      padding: var(--safe-t) calc(6px + var(--safe-r)) 4px calc(10px + var(--safe-l));
       background: var(--bar);
       border-bottom: 1px solid var(--line);
       backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
       z-index: 20;
     }
-    .bar__title { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
-    .bar__title b { font-size: 16.5px; font-weight: 800; letter-spacing: -0.02em; }
-    .bar__title span { font-size: 11.5px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap; }
-    .bar__actions { display: flex; align-items: center; gap: 6px; }
+    .bar__left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .bar__title { font-size: 16px; font-weight: 800; letter-spacing: -0.02em; white-space: nowrap; }
+    .src-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      max-width: 46vw;
+      min-height: 30px; padding: 0 11px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--line);
+      font-size: 11.5px; font-weight: 700; color: var(--muted);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .src-chip i { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); flex: none; }
+    body[data-source="live"] .src-chip i { background: var(--accent); }
+    .src-chip.is-err i { background: var(--warn); }
+    .bar__actions { display: flex; align-items: center; gap: 2px; }
     .icon-btn {
       display: inline-grid; place-items: center;
       width: var(--tap); height: var(--tap);
-      border-radius: 13px;
-      color: var(--text);
+      border-radius: 12px;
       transition: background-color 0.2s ease;
     }
     .icon-btn:active { background: rgba(255, 255, 255, 0.12); }
-    .icon-btn svg { width: 21px; height: 21px; }
-    .lang {
-      display: inline-flex; padding: 3px; border-radius: 999px;
-      background: rgba(255, 255, 255, 0.08); border: 1px solid var(--line);
-    }
-    .lang button { min-width: 36px; min-height: 32px; border-radius: 999px; font-size: 12px; font-weight: 700; color: var(--muted); }
+    .icon-btn svg { width: 20px; height: 20px; }
+    .lang { display: inline-flex; padding: 2px; border-radius: 999px; background: rgba(255,255,255,0.08); border: 1px solid var(--line); margin-right: 2px; }
+    .lang button { min-width: 32px; min-height: 30px; border-radius: 999px; font-size: 11.5px; font-weight: 700; color: var(--muted); }
     .lang button[aria-pressed="true"] { background: var(--accent); color: #fff; }
 
-    /* ---------- stage + frame ---------- */
+    /* ---------- stage ---------- */
     .stage { position: relative; min-height: 0; overflow: hidden; background: #fff; }
     .pan { position: relative; width: 100%; height: 100%; overflow: hidden; -webkit-overflow-scrolling: touch; }
     .pan.is-pan { overflow: auto; overscroll-behavior: contain; }
-    #frame {
-      position: absolute; top: 0; left: 0;
-      border: 0; background: #fff;
-      transform-origin: top left;
-      display: block;
-    }
+    #frame { position: absolute; top: 0; left: 0; border: 0; background: #fff; transform-origin: top left; display: block; }
 
-    .loader {
+    /* live reader */
+    .reader {
+      position: absolute; inset: 0;
+      overflow-y: auto; -webkit-overflow-scrolling: touch;
+      background: var(--bg);
+      padding: 20px 18px calc(30px + var(--safe-b));
+    }
+    .reader > * + * { margin-top: 16px; }
+    .r-h1 { font-size: 30px; line-height: 1.08; letter-spacing: -0.03em; font-weight: 800; margin: 6px 0 0; }
+    .r-h2 { font-size: 22px; line-height: 1.15; letter-spacing: -0.02em; font-weight: 800; margin: 26px 0 0; }
+    .r-h3 { font-size: 17px; font-weight: 700; margin: 18px 0 0; }
+    .r-p  { margin: 10px 0 0; color: var(--muted); font-size: 15.5px; line-height: 1.6; }
+    .r-li { margin: 6px 0 0; padding-left: 16px; border-left: 2px solid var(--line); color: var(--muted); font-size: 14.5px; }
+    .r-img { margin: 18px 0 0; }
+    .r-img img { width: 100%; height: auto; border-radius: 18px; border: 1px solid var(--line); background: #101018; display: block; }
+    .r-img figcaption { margin-top: 8px; font-size: 12px; color: var(--faint); }
+    .r-a {
+      display: inline-flex; align-items: center; gap: 8px;
+      min-height: 44px; padding: 0 18px; margin: 14px 10px 0 0;
+      border-radius: 999px;
+      background: linear-gradient(120deg, #7c3aed, #ec4899 60%, #f59e0b);
+      color: #fff; font-weight: 700; font-size: 14.5px; text-decoration: none;
+    }
+    .r-a--plain { background: rgba(255,255,255,0.08); border: 1px solid var(--line); color: var(--text); }
+    .r-note { margin: 0 0 4px; font-size: 12px; color: var(--faint); }
+    .r-links { display: flex; flex-wrap: wrap; }
+
+    /* loader / error */
+    .overlay {
       position: absolute; inset: 0; z-index: 10;
-      display: grid; place-items: center; gap: 0;
+      display: grid; place-items: center;
       background: var(--bg);
       transition: opacity 0.35s ease;
     }
-    .loader.is-off { opacity: 0; pointer-events: none; }
-    .loader__box { display: grid; justify-items: center; gap: 14px; }
-    .spinner {
-      width: 34px; height: 34px; border-radius: 50%;
-      border: 3px solid rgba(255, 255, 255, 0.15);
-      border-top-color: var(--accent);
-      animation: spin 0.9s linear infinite;
-    }
+    .overlay.is-off { opacity: 0; pointer-events: none; }
+    .overlay__box { display: grid; justify-items: center; gap: 14px; padding: 24px; text-align: center; }
+    .spinner { width: 32px; height: 32px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.15); border-top-color: var(--accent); animation: spin 0.9s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .loader p { margin: 0; color: var(--muted); font-size: 13.5px; }
+    .overlay p { margin: 0; color: var(--muted); font-size: 13.5px; max-width: 30ch; }
+    .overlay .btn, .errcard .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-height: 46px; padding: 0 22px; border-radius: 999px;
+      font-weight: 700; font-size: 14.5px;
+      background: rgba(255,255,255,0.09); border: 1px solid var(--line); color: var(--text);
+    }
+    .overlay .btn--primary, .errcard .btn--primary { background: linear-gradient(120deg, #7c3aed, #ec4899 60%, #f59e0b); border: 0; color: #fff; }
+    .errcard { display: grid; justify-items: center; gap: 12px; padding: 26px; text-align: center; }
+    .errcard h2 { margin: 0; font-size: 18px; }
+    .errcard p { margin: 0; color: var(--muted); font-size: 13.5px; line-height: 1.55; max-width: 34ch; }
+    .errcard__row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
 
-    /* ---------- bottom dock ---------- */
+    /* ---------- dock ---------- */
     .dock {
-      display: flex; align-items: center; justify-content: space-between; gap: 10px;
-      padding: 8px calc(10px + var(--safe-r)) calc(8px + var(--safe-b)) calc(10px + var(--safe-l));
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      padding: 7px calc(8px + var(--safe-r)) calc(7px + var(--safe-b)) calc(8px + var(--safe-l));
       background: var(--bar);
       border-top: 1px solid var(--line);
       backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
       z-index: 20;
     }
+    body[data-source="live"] .dock { display: none; }
     .zoom { display: flex; align-items: center; gap: 2px; }
     .zoom button {
-      width: var(--tap); height: var(--tap);
-      border-radius: 13px; font-size: 21px; font-weight: 700; line-height: 1;
+      width: var(--tap); height: var(--tap); border-radius: 12px;
+      font-size: 20px; font-weight: 700; line-height: 1;
       display: grid; place-items: center;
-      background: rgba(255, 255, 255, 0.07); border: 1px solid var(--line);
+      background: rgba(255,255,255,0.07); border: 1px solid var(--line);
     }
-    .zoom button:active { background: rgba(255, 255, 255, 0.16); }
-    .zoom output { min-width: 58px; text-align: center; font-size: 13px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
-    .seg {
-      display: inline-flex; padding: 3px; gap: 2px; border-radius: 999px;
-      background: rgba(255, 255, 255, 0.08); border: 1px solid var(--line);
-    }
-    .seg button { min-height: 38px; padding: 0 16px; border-radius: 999px; font-size: 13px; font-weight: 650; color: var(--muted); }
-    .seg button[aria-pressed="true"] { background: rgba(255, 255, 255, 0.16); color: var(--text); }
-    .dock__hint { font-size: 11.5px; color: var(--muted); max-width: 34vw; text-align: right; line-height: 1.3; }
+    .zoom button:active { background: rgba(255,255,255,0.16); }
+    .zoom output { min-width: 52px; text-align: center; font-size: 12.5px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .seg { display: inline-flex; padding: 3px; gap: 2px; border-radius: 999px; background: rgba(255,255,255,0.08); border: 1px solid var(--line); }
+    .seg button { min-height: 36px; padding: 0 14px; border-radius: 999px; font-size: 12.5px; font-weight: 650; color: var(--muted); }
+    .seg button[aria-pressed="true"] { background: rgba(255,255,255,0.16); color: var(--text); }
 
     /* ---------- info sheet ---------- */
     .sheet { position: fixed; inset: 0; z-index: 40; }
-    .sheet[hidden] { display: none; }
-    .sheet__backdrop { position: absolute; inset: 0; background: rgba(3, 3, 6, 0.6); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); opacity: 0; transition: opacity 0.3s ease; }
+    .sheet__backdrop { position: absolute; inset: 0; background: rgba(3,3,6,0.6); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); opacity: 0; transition: opacity 0.3s ease; }
     .sheet__panel {
-      position: absolute; inset: auto 0 0 0;
-      max-height: 82%;
-      overflow-y: auto;
-      padding: 18px calc(16px + var(--safe-r)) calc(20px + var(--safe-b)) calc(16px + var(--safe-l));
+      position: absolute; inset: auto 0 0 0; max-height: 84%;
+      overflow-y: auto; -webkit-overflow-scrolling: touch;
+      padding: 16px calc(16px + var(--safe-r)) calc(20px + var(--safe-b)) calc(16px + var(--safe-l));
       border-radius: 26px 26px 0 0;
-      background: #14141c;
+      background: var(--panel);
       border-top: 1px solid var(--line);
       transform: translateY(102%);
       transition: transform 0.38s cubic-bezier(0.2, 0.7, 0.2, 1);
     }
     .sheet.is-open .sheet__backdrop { opacity: 1; }
     .sheet.is-open .sheet__panel { transform: none; }
-    .sheet__grab { width: 42px; height: 4px; border-radius: 4px; background: rgba(255, 255, 255, 0.22); margin: 0 auto 14px; }
+    .sheet__grab { width: 42px; height: 4px; border-radius: 4px; background: rgba(255,255,255,0.22); margin: 0 auto 14px; }
     .sheet h2 { margin: 0 0 10px; font-size: 19px; letter-spacing: -0.02em; }
-    .sheet p { margin: 0 0 10px; color: var(--muted); font-size: 14px; line-height: 1.55; }
+    .sheet p { margin: 0 0 10px; color: var(--muted); font-size: 13.5px; line-height: 1.55; }
     .sheet p b { color: var(--text); }
     .sheet .btn {
       display: flex; align-items: center; justify-content: center; gap: 8px;
-      width: 100%; min-height: 50px; margin-top: 6px;
-      border-radius: 999px; font-weight: 700; font-size: 15.5px;
-      background: linear-gradient(120deg, #7c3aed, #ec4899 60%, #f59e0b);
-      color: #fff; text-decoration: none;
+      width: 100%; min-height: 48px; margin-top: 6px; border-radius: 999px;
+      font-weight: 700; font-size: 15px; text-decoration: none;
+      background: linear-gradient(120deg, #7c3aed, #ec4899 60%, #f59e0b); color: #fff;
     }
-    .sheet .btn--ghost { background: rgba(255, 255, 255, 0.08); border: 1px solid var(--line); color: var(--text); }
-    .sheet__foot { margin-top: 12px; font-size: 12px; color: #6d6d80; line-height: 1.5; }
+    .sheet .btn--ghost { background: rgba(255,255,255,0.08); border: 1px solid var(--line); color: var(--text); }
+    .sheet__foot { margin-top: 12px; font-size: 11.5px; color: var(--faint); line-height: 1.5; }
 
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
     }
   </style>
 </head>
-<body>
+<body data-source="arch">
 
   <header class="bar">
-    <div class="bar__title">
-      <b>vibes.ai</b>
-      <span data-i18n="bar.tag">mobile viewer</span>
+    <div class="bar__left">
+      <span class="bar__title">vibes.ai</span>
+      <button class="src-chip" id="srcChip" type="button" data-i18n-aria="chip.aria" aria-label="Przełącz źródło">
+        <i aria-hidden="true"></i><span id="srcLabel">arch</span>
+      </button>
     </div>
     <div class="bar__actions">
       <div class="lang" role="group" aria-label="Language / Język">
@@ -177,7 +215,7 @@
       <button class="icon-btn" id="reloadBtn" type="button" data-i18n-aria="act.reload" aria-label="Odśwież">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 10-2.3 6.3M20 5v6h-6"/></svg>
       </button>
-      <a class="icon-btn" id="externalBtn" href="https://vibes.ai/" target="_blank" rel="noopener" data-i18n-aria="act.external" aria-label="Otwórz oryginał">
+      <a class="icon-btn" href="https://vibes.ai/" target="_blank" rel="noopener" data-i18n-aria="act.external" aria-label="Otwórz oryginał">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 13v6a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h6"/></svg>
       </a>
       <button class="icon-btn" id="infoBtn" type="button" data-i18n-aria="act.info" aria-label="Informacje">
@@ -188,12 +226,26 @@
 
   <main class="stage" id="stage">
     <div class="pan" id="pan">
-      <iframe id="frame" src="https://vibes.ai/" title="vibes.ai" allow="fullscreen; clipboard-write; autoplay" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals allow-presentation"></iframe>
+      <iframe id="frame" title="vibes.ai (archive.org replay)" allow="fullscreen; autoplay" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals allow-presentation"></iframe>
     </div>
-    <div class="loader" id="loader">
-      <div class="loader__box">
+
+    <div class="reader" id="reader" hidden aria-live="polite"></div>
+
+    <div class="overlay" id="loader">
+      <div class="overlay__box">
         <div class="spinner" aria-hidden="true"></div>
-        <p data-i18n="loader">Ładowanie vibes.ai…</p>
+        <p id="loaderText" data-i18n="loader.arch">Ładowanie oryginału z archive.org…</p>
+      </div>
+    </div>
+
+    <div class="overlay is-off" id="err" hidden>
+      <div class="errcard">
+        <h2 data-i18n="err.title">Nie udało się pobrać żywej wersji</h2>
+        <p id="errText" data-i18n="err.text">Publiczne proxy CORS nie odpowiedziały. Spróbuj ponownie albo wróć do repliki z archive.org.</p>
+        <div class="errcard__row">
+          <button class="btn btn--primary" type="button" id="retryBtn" data-i18n="err.retry">Spróbuj ponownie</button>
+          <button class="btn" type="button" id="backArchBtn" data-i18n="err.back">Wróć do archive.org</button>
+        </div>
       </div>
     </div>
   </main>
@@ -208,20 +260,19 @@
       <button type="button" data-mode="fit" aria-pressed="true" data-i18n="mode.fit">Dopasuj</button>
       <button type="button" data-mode="pan" aria-pressed="false" data-i18n="mode.pan">1:1</button>
     </div>
-    <p class="dock__hint" data-i18n="dock.hint">Przesuwaj palcem, aby scrollować stronę w ramce</p>
   </nav>
 
   <div class="sheet" id="infoSheet" hidden>
     <div class="sheet__backdrop" data-close></div>
     <div class="sheet__panel" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
       <div class="sheet__grab" aria-hidden="true"></div>
-      <h2 id="infoTitle" data-i18n="info.title">Jak to działa?</h2>
-      <p data-i18n-html="info.p1"><b>To nie kopia.</b> Ta nakładka nie przechowuje żadnych treści vibes.ai — oryginalna strona jest ładowana na żywo z vibes.ai do ramki poniżej paska.</p>
-      <p data-i18n-html="info.p2"><b>Tryb „Dopasuj”</b> skaluje pulpitową wersję strony do szerokości telefonu (zoom − / + zmienia wirtualną szerokość). <b>Tryb „1:1”</b> pokazuje stronę w pełnej ostrości — przewijasz wtedy także w poziomie.</p>
-      <p data-i18n-html="info.p3"><b>Pusta ramka lub komunikat o blokadzie?</b> Oznacza to, że vibes.ai wysyła nagłówki X-Frame-Options / CSP i zabrania osadzania w iframe. Wtedy zostaje przycisk poniżej — otwiera oryginał w nowej karcie.</p>
+      <h2 id="infoTitle" data-i18n="info.title">Skąd biorą się treści?</h2>
+      <p data-i18n-html="info.p1"><b>Archiwum (domyślne).</b> vibes.ai wysyła nagłówek <b>X-Frame-Options: DENY</b>, więc żywej strony nie wolno osadzić w iframe w żadnej przeglądarce. Dlatego domyślnie pokazujemy replikę oryginału z archive.org (tryb replay „if_”) — oryginalne bajty strony, osadzalne legalnie i stabilnie. Data snapshotu widnieje na chipie u góry.</p>
+      <p data-i18n-html="info.p2"><b>Live (czytnik).</b> Drugie źródło: aktualna strona pobierana w Twojej przeglądarce przez publiczne proxy CORS i złamana do mobilnego układu. Proxy bywają przeciążone — wtedy pojawi się ekran błędu z ponowieniem. Nic nie jest przechowywane na serwerze projektu.</p>
+      <p data-i18n-html="info.p3"><b>Sterowanie.</b> „Dopasuj” skaluje pulpitowy layout do szerokości telefonu, zoom − / + zmienia wirtualną szerokość, „1:1” daje pełną ostrość z panoramą w poziomie. Chip u góry przełącza źródło, ikona strzałki otwiera oryginał w nowej karcie.</p>
       <a class="btn" href="https://vibes.ai/" target="_blank" rel="noopener" data-i18n="info.open">Otwórz oryginał: vibes.ai</a>
       <button class="btn btn--ghost" type="button" data-close data-i18n="info.close">Zamknij</button>
-      <p class="sheet__foot" data-i18n="info.foot">Nieoficjalna nakładka przeglądarkowa. Wszystkie treści i znaki towarowe należą do vibes.ai / Meta. Projekt nie jest z nimi powiązany.</p>
+      <p class="sheet__foot" data-i18n="info.foot">Nieoficjalna nakładka przeglądarkowa. Treści i znaki towarowe należą do vibes.ai / Meta; replika za zgodą praktyki archive.org. Projekt nie jest powiązany z vibes.ai ani Meta.</p>
     </div>
   </div>
 
@@ -229,52 +280,70 @@
   (function () {
     "use strict";
 
+    var ORIGIN = "https://vibes.ai";
+    var FALLBACK_TS = "20260901114509";           /* verified snapshot 2026-09-01 */
+    var CACHE_KEY = "vibesviewer.live.v1";
+    var CACHE_TTL = 3 * 60 * 60 * 1000;
+
     /* ================= i18n (chrome only) ================= */
     var DICT = {
       pl: {
-        "bar.tag": "mobile viewer",
+        "chip.aria": "Przełącz źródło treści",
+        "chip.arch": "arch · {d}",
+        "chip.live": "live",
         "act.reload": "Odśwież",
         "act.external": "Otwórz oryginał w nowej karcie",
         "act.info": "Informacje",
-        "loader": "Ładowanie vibes.ai…",
+        "loader.arch": "Ładowanie oryginału z archive.org…",
+        "loader.live": "Pobieranie żywej strony przez proxy…",
         "mode.fit": "Dopasuj",
         "mode.pan": "1:1",
-        "dock.hint": "Przesuwaj palcem, aby scrollować stronę w ramce",
-        "info.title": "Jak to działa?",
-        "info.p1": "<b>To nie kopia.</b> Ta nakładka nie przechowuje żadnych treści vibes.ai — oryginalna strona jest ładowana na żywo z vibes.ai do ramki pod paskiem.",
-        "info.p2": "<b>Tryb „Dopasuj”</b> skaluje pulpitową wersję strony do szerokości telefonu (zoom − / + zmienia wirtualną szerokość). <b>Tryb „1:1”</b> pokazuje stronę w pełnej ostrości — przewijasz wtedy także w poziomie.",
-        "info.p3": "<b>Pusta ramka lub komunikat o blokadzie?</b> Oznacza to, że vibes.ai wysyła nagłówki X-Frame-Options / CSP i zabrania osadzania w iframe. Wtedy zostaje przycisk poniżej — otwiera oryginał w nowej karcie.",
+        "err.title": "Nie udało się pobrać żywej wersji",
+        "err.text": "Publiczne proxy CORS nie odpowiedziały. Spróbuj ponownie albo wróć do repliki z archive.org.",
+        "err.retry": "Spróbuj ponownie",
+        "err.back": "Wróć do archive.org",
+        "info.title": "Skąd biorą się treści?",
+        "info.p1": "<b>Archiwum (domyślne).</b> vibes.ai wysyła nagłówek <b>X-Frame-Options: DENY</b>, więc żywej strony nie wolno osadzić w iframe w żadnej przeglądarce. Dlatego domyślnie pokazujemy replikę oryginału z archive.org (tryb replay „if_”) — oryginalne bajty strony, osadzalne stabilnie. Data snapshotu widnieje na chipie u góry.",
+        "info.p2": "<b>Live (czytnik).</b> Drugie źródło: aktualna strona pobierana w Twojej przeglądarce przez publiczne proxy CORS i złamana do mobilnego układu. Proxy bywają przeciążone — wtedy pojawi się ekran błędu z ponowieniem. Nic nie jest przechowywane na serwerze projektu.",
+        "info.p3": "<b>Sterowanie.</b> „Dopasuj” skaluje pulpitowy layout do szerokości telefonu, zoom − / + zmienia wirtualną szerokość, „1:1” daje pełną ostrość z panoramą w poziomie. Chip u góry przełącza źródło, ikona strzałki otwiera oryginał w nowej karcie.",
         "info.open": "Otwórz oryginał: vibes.ai",
         "info.close": "Zamknij",
-        "info.foot": "Nieoficjalna nakładka przeglądarkowa. Wszystkie treści i znaki towarowe należą do vibes.ai / Meta. Projekt nie jest z nimi powiązany.",
+        "info.foot": "Nieoficjalna nakładka przeglądarkowa. Treści i znaki towarowe należą do vibes.ai / Meta; replika z archive.org. Projekt nie jest powiązany z vibes.ai ani Meta.",
+        "reader.note": "Treść żywej strony vibes.ai złamana do układu mobilnego. Obrazy i linki prowadzą do oryginału.",
         "doc.title": "vibes.ai · mobile viewer"
       },
       en: {
-        "bar.tag": "mobile viewer",
+        "chip.aria": "Switch content source",
+        "chip.arch": "arch · {d}",
+        "chip.live": "live",
         "act.reload": "Reload",
         "act.external": "Open the original in a new tab",
         "act.info": "Info",
-        "loader": "Loading vibes.ai…",
+        "loader.arch": "Loading the original from archive.org…",
+        "loader.live": "Fetching the live site via proxy…",
         "mode.fit": "Fit",
         "mode.pan": "1:1",
-        "dock.hint": "Swipe to scroll the page inside the frame",
-        "info.title": "How does this work?",
-        "info.p1": "<b>This is not a copy.</b> The wrapper stores no vibes.ai content — the original site is loaded live from vibes.ai into the frame below the bar.",
-        "info.p2": "<b>“Fit” mode</b> scales the desktop site down to your phone width (zoom − / + changes the virtual width). <b>“1:1” mode</b> shows the site at full crispness — you can then pan horizontally too.",
-        "info.p3": "<b>Blank frame or a refusal message?</b> That means vibes.ai sends X-Frame-Options / CSP headers and forbids iframe embedding. Use the button below to open the original in a new tab.",
+        "err.title": "Could not fetch the live site",
+        "err.text": "The public CORS proxies did not answer. Try again, or go back to the archive.org replay.",
+        "err.retry": "Try again",
+        "err.back": "Back to archive.org",
+        "info.title": "Where does the content come from?",
+        "info.p1": "<b>Archive (default).</b> vibes.ai sends <b>X-Frame-Options: DENY</b>, so the live site cannot be embedded in an iframe in any browser. By default we therefore show the archive.org replay of the original („if_” mode) — the site's own bytes, embeddable and stable. The snapshot date is on the chip above.",
+        "info.p2": "<b>Live (reader).</b> Second source: the current page fetched in your browser through public CORS proxies and reflowed into a mobile layout. Proxies can be overloaded — an error screen with retry appears then. Nothing is stored on the project server.",
+        "info.p3": "<b>Controls.</b> “Fit” scales the desktop layout to phone width, zoom − / + changes the virtual width, “1:1” gives full crispness with horizontal panning. The chip above switches source; the arrow icon opens the original in a new tab.",
         "info.open": "Open the original: vibes.ai",
         "info.close": "Close",
-        "info.foot": "Unofficial browser wrapper. All content and trademarks belong to vibes.ai / Meta. This project is not affiliated with them.",
+        "info.foot": "Unofficial browser wrapper. Content and trademarks belong to vibes.ai / Meta; replay via archive.org. Not affiliated with vibes.ai or Meta.",
+        "reader.note": "Live vibes.ai content reflowed into a mobile layout. Images and links lead to the original.",
         "doc.title": "vibes.ai · mobile viewer"
       }
     };
     var lang = "pl";
     try {
-      var saved = localStorage.getItem("vibesviewer.lang");
-      if (saved && DICT[saved]) lang = saved;
+      var savedLang = localStorage.getItem("vibesviewer.lang");
+      if (savedLang && DICT[savedLang]) lang = savedLang;
       else if (!/pl/i.test(navigator.language || "")) lang = "en";
     } catch (e) { /* ignore */ }
-
     function t(k) { return (DICT[lang] && DICT[lang][k]) || DICT.en[k] || k; }
     function applyLang() {
       document.documentElement.lang = lang;
@@ -283,6 +352,7 @@
       document.querySelectorAll("[data-i18n-html]").forEach(function (el) { el.innerHTML = t(el.getAttribute("data-i18n-html")); });
       document.querySelectorAll("[data-i18n-aria]").forEach(function (el) { el.setAttribute("aria-label", t(el.getAttribute("data-i18n-aria"))); });
       document.querySelectorAll("[data-lang]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-lang") === lang)); });
+      updateChip();
     }
     document.addEventListener("click", function (e) {
       var b = e.target.closest("[data-lang]");
@@ -291,19 +361,217 @@
       try { localStorage.setItem("vibesviewer.lang", lang); } catch (err) { /* ignore */ }
       applyLang();
     });
-    applyLang();
 
-    /* ================= frame fitting ================= */
+    /* ================= elements ================= */
     var stage = document.getElementById("stage");
     var pan = document.getElementById("pan");
     var frame = document.getElementById("frame");
-    var zoomLabel = document.getElementById("zoomLabel");
+    var reader = document.getElementById("reader");
     var loader = document.getElementById("loader");
+    var loaderText = document.getElementById("loaderText");
+    var err = document.getElementById("err");
+    var zoomLabel = document.getElementById("zoomLabel");
+    var srcChip = document.getElementById("srcChip");
+    var srcLabel = document.getElementById("srcLabel");
 
-    var W = 1280;              /* virtual desktop width the iframe renders at */
-    var W_MIN = 360, W_MAX = 1920;
-    var mode = "fit";
+    /* ================= source: archive ================= */
+    var ts = FALLBACK_TS;
+    function archUrl() { return "https://web.archive.org/web/" + ts + "if_/" + ORIGIN + "/"; }
+    function fmtTs(s) { return s.slice(6, 8) + "." + s.slice(4, 6) + "." + s.slice(0, 4); }
 
+    /* try to discover a newer snapshot (best effort, CORS-permitting) */
+    (function () {
+      var ctl = new AbortController();
+      var to = setTimeout(function () { ctl.abort(); }, 7000);
+      fetch("https://archive.org/wayback/available?url=vibes.ai", { signal: ctl.signal })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (j) {
+          clearTimeout(to);
+          var snap = j && j.archived_snapshots && j.archived_snapshots.closest;
+          if (snap && snap.available && /^\d{14}$/.test(snap.timestamp || "")) {
+            ts = snap.timestamp;
+            if (source === "arch" && frame.getAttribute("src")) frame.src = archUrl();
+            updateChip();
+          }
+        })
+        .catch(function () { clearTimeout(to); });
+    })();
+
+    /* ================= source: live reader ================= */
+    var PROXIES = [
+      function (u) { return "https://api.allorigins.win/raw?url=" + encodeURIComponent(u); },
+      function (u) { return "https://corsproxy.io/?url=" + encodeURIComponent(u); },
+      function (u) { return "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(u); }
+    ];
+    var liveProxy = 0;
+
+    function safeUrl(u) {
+      try {
+        var x = new URL(u, ORIGIN);
+        if (x.protocol === "https:" || x.protocol === "http:") return x.href;
+      } catch (e) { /* ignore */ }
+      return null;
+    }
+    function proxied(u) { return PROXIES[liveProxy](u); }
+
+    function fetchWithTimeout(url, ms) {
+      var ctl = new AbortController();
+      var to = setTimeout(function () { ctl.abort(); }, ms);
+      return fetch(url, { signal: ctl.signal, redirect: "follow" })
+        .then(function (r) { clearTimeout(to); if (!r.ok) throw new Error("http " + r.status); return r.text(); })
+        .catch(function (e) { clearTimeout(to); throw e; });
+    }
+
+    function extractModel(html) {
+      var doc = new DOMParser().parseFromString(html, "text/html");
+      var root = doc.querySelector("main") || doc.body;
+      if (!root) throw new Error("no content");
+      root.querySelectorAll("script, noscript, style, link, meta, iframe, svg, form, button").forEach(function (n) { n.remove(); });
+      var model = [];
+      var seenImg = {};
+      var nodes = root.querySelectorAll("h1, h2, h3, h4, p, li, img, a");
+      nodes.forEach(function (n) {
+        if (n.closest("header, nav, footer")) return;
+        var tag = n.tagName.toLowerCase();
+        if (tag === "img") {
+          var src = safeUrl(n.getAttribute("src") || (n.getAttribute("srcset") || "").split(",").pop().trim().split(" ")[0]);
+          if (!src || seenImg[src]) return;
+          if (/logo/i.test(src) === false && (parseInt(n.getAttribute("width") || "500", 10) < 120)) return;
+          seenImg[src] = 1;
+          model.push({ k: "img", src: src, alt: n.getAttribute("alt") || "" });
+        } else if (tag === "a") {
+          if (n.closest("p, li, h1, h2, h3, h4") || n.querySelector("img")) return;
+          var txt = (n.textContent || "").replace(/\s+/g, " ").trim();
+          var href = safeUrl(n.getAttribute("href") || "");
+          if (!txt || txt.length > 60 || !href || href === ORIGIN + "/" || href === ORIGIN) return;
+          model.push({ k: "a", t: txt, href: href });
+        } else {
+          var text = (n.textContent || "").replace(/\s+/g, " ").trim();
+          if (!text) return;
+          if (tag === "h1") model.push({ k: "h1", t: text });
+          else if (tag === "h2") model.push({ k: "h2", t: text });
+          else if (tag === "h3" || tag === "h4") model.push({ k: "h3", t: text });
+          else if (tag === "li") model.push({ k: "li", t: text });
+          else model.push({ k: "p", t: text });
+        }
+      });
+      if (model.length < 4) throw new Error("too little content");
+      return model;
+    }
+
+    function renderModel(model) {
+      reader.textContent = "";
+      var note = document.createElement("p");
+      note.className = "r-note";
+      note.textContent = t("reader.note");
+      reader.appendChild(note);
+      var links = [];
+      model.forEach(function (m) {
+        var el;
+        if (m.k === "img") {
+          el = document.createElement("figure");
+          el.className = "r-img";
+          var img = document.createElement("img");
+          img.src = proxied(m.src);
+          img.alt = m.alt;
+          img.loading = "lazy";
+          img.decoding = "async";
+          el.appendChild(img);
+          if (m.alt) {
+            var cap = document.createElement("figcaption");
+            cap.textContent = m.alt;
+            el.appendChild(cap);
+          }
+        } else if (m.k === "a") {
+          links.push(m);
+          return;
+        } else {
+          el = document.createElement({ h1: "h1", h2: "h2", h3: "h3", p: "p", li: "p" }[m.k]);
+          if (m.k === "li") el.className = "r-li"; else el.className = "r-" + m.k;
+          el.textContent = m.t;
+        }
+        reader.appendChild(el);
+      });
+      if (links.length) {
+        var wrap = document.createElement("div");
+        wrap.className = "r-links";
+        links.forEach(function (m, i) {
+          var a = document.createElement("a");
+          a.className = "r-a" + (i > 1 ? " r-a--plain" : "");
+          a.href = m.href;
+          a.target = "_blank";
+          a.rel = "noopener";
+          a.textContent = m.t;
+          wrap.appendChild(a);
+        });
+        reader.appendChild(wrap);
+      }
+    }
+
+    function loadLive(force) {
+      if (!force) {
+        try {
+          var c = JSON.parse(localStorage.getItem(CACHE_KEY) || "null");
+          if (c && c.t > Date.now() - CACHE_TTL && c.model && c.model.length) {
+            liveProxy = c.proxy | 0;
+            renderModel(c.model);
+            return Promise.resolve(true);
+          }
+        } catch (e) { /* ignore */ }
+      }
+      showLoader(t("loader.live"));
+      var chain = Promise.reject(new Error("start"));
+      PROXIES.forEach(function (make, i) {
+        chain = chain.catch(function () {
+          liveProxy = i;
+          return fetchWithTimeout(make(ORIGIN + "/"), 12000).then(function (html) {
+            if (/<html/i.test(html) === false || /vibes/i.test(html) === false) throw new Error("bad body");
+            var model = extractModel(html);
+            try { localStorage.setItem(CACHE_KEY, JSON.stringify({ t: Date.now(), proxy: i, model: model })); } catch (e) { /* ignore */ }
+            renderModel(model);
+          });
+        });
+      });
+      return chain.then(function () { hideLoader(); return true; })
+        .catch(function () { hideLoader(); showError(); return false; });
+    }
+
+    /* ================= source switching ================= */
+    var source = "arch";
+    function updateChip() {
+      srcChip.classList.toggle("is-err", !err.hidden && source === "live");
+      srcLabel.textContent = source === "arch"
+        ? t("chip.arch").replace("{d}", fmtTs(ts))
+        : t("chip.live");
+    }
+    function setSource(s) {
+      source = s;
+      document.body.dataset.source = s;
+      err.hidden = true;
+      if (s === "arch") {
+        reader.hidden = true;
+        pan.hidden = false;
+        if (!frame.getAttribute("src")) {
+          showLoader(t("loader.arch"));
+          frame.src = archUrl();
+        }
+      } else {
+        pan.hidden = true;
+        reader.hidden = false;
+        if (!reader.childElementCount) loadLive(false);
+      }
+      updateChip();
+    }
+    srcChip.addEventListener("click", function () { setSource(source === "arch" ? "live" : "arch"); });
+    document.getElementById("backArchBtn").addEventListener("click", function () { setSource("arch"); });
+    document.getElementById("retryBtn").addEventListener("click", function () {
+      err.hidden = true;
+      updateChip();
+      loadLive(true);
+    });
+
+    /* ================= frame fitting ================= */
+    var W = 1280, W_MIN = 360, W_MAX = 1920, mode = "fit";
     function layout() {
       var r = stage.getBoundingClientRect();
       if (mode === "fit") {
@@ -333,37 +601,39 @@
       W = Math.min(W_MAX, Math.max(W_MIN, W + dir * step));
       layout();
     }
-
     document.querySelectorAll("[data-mode]").forEach(function (b) {
       b.addEventListener("click", function () { setMode(b.getAttribute("data-mode")); });
     });
     document.getElementById("zoomIn").addEventListener("click", function () { zoom(-1); });
     document.getElementById("zoomOut").addEventListener("click", function () { zoom(1); });
-
     window.addEventListener("resize", layout);
     window.addEventListener("orientationchange", function () { setTimeout(layout, 120); });
     if (window.visualViewport) window.visualViewport.addEventListener("resize", layout);
-    layout();
 
-    /* ================= loader + reload ================= */
-    function showLoader() { loader.classList.remove("is-off"); }
+    /* ================= loader / reload / sheet ================= */
+    function showLoader(msg) { loaderText.textContent = msg; loader.classList.remove("is-off"); loader.hidden = false; }
     function hideLoader() { loader.classList.add("is-off"); }
-    frame.addEventListener("load", function () { setTimeout(hideLoader, 350); });
-    /* if the load event never arrives (blocked / dead network), stop spinning */
-    setTimeout(hideLoader, 12000);
+    function showError() { err.hidden = false; updateChip(); }
+
+    frame.addEventListener("load", function () { setTimeout(hideLoader, 300); });
+    setTimeout(hideLoader, 15000);   /* never spin forever */
 
     document.getElementById("reloadBtn").addEventListener("click", function () {
-      showLoader();
-      frame.src = "https://vibes.ai/";
+      if (source === "arch") { showLoader(t("loader.arch")); frame.src = archUrl(); }
+      else loadLive(true);
     });
 
-    /* ================= info sheet ================= */
     var sheet = document.getElementById("infoSheet");
     function openSheet() { sheet.hidden = false; requestAnimationFrame(function () { sheet.classList.add("is-open"); }); }
     function closeSheet() { sheet.classList.remove("is-open"); setTimeout(function () { sheet.hidden = true; }, 380); }
     document.getElementById("infoBtn").addEventListener("click", openSheet);
     sheet.addEventListener("click", function (e) { if (e.target.closest("[data-close]")) closeSheet(); });
     sheet.addEventListener("keydown", function (e) { if (e.key === "Escape") closeSheet(); });
+
+    /* ================= boot ================= */
+    applyLang();
+    layout();
+    setSource("arch");
   })();
   </script>
 </body>
