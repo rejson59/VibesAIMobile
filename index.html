@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Vibes — bring ideas to life with vibes · mobile</title>
+  <meta name="description" content="Vibes on your phone: create images and videos from scratch, restyle them, add music, lip sync to songs and more." />
+  <meta name="theme-color" content="#08080c" />
+  <meta name="color-scheme" content="dark" />
+
+  <!-- PWA / home-screen -->
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/png" sizes="192x192" href="images/icon-192.png" />
+  <link rel="apple-touch-icon" href="images/apple-touch-icon.png" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Vibes" />
+
+  <!-- Social -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Vibes — bring ideas to life with vibes" />
+  <meta property="og:description" content="Create images and videos from scratch, restyle them, add music, lip sync to songs and more. Now mobile-first." />
+  <meta property="og:image" content="images/hero.jpg" />
+
+  <link rel="preload" as="image" href="images/hero.jpg" fetchpriority="high" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/landing.css" />
+  <script defer src="js/i18n.js"></script>
+  <script defer src="js/frame.js"></script>
+  <script defer src="js/main.js"></script>
+</head>
+
+<body data-title-key="doc.title">
+  <a class="skip-link" href="#main" data-i18n="skip">Skip to content</a>
+
+  <div class="frame-stage">
+    <div class="device">
+      <div class="device__screen">
+
+        <!-- ================= Top bar ================= -->
+        <header class="topbar">
+          <a class="brand" href="#top" aria-label="Vibes — home">
+            <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+              <defs>
+                <linearGradient id="lgTop" x1="2" y1="30" x2="30" y2="2" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#7c3aed"/><stop offset=".55" stop-color="#ec4899"/><stop offset="1" stop-color="#f59e0b"/>
+                </linearGradient>
+              </defs>
+              <rect x="3.5" y="11" width="4.8" height="10" rx="2.4" fill="url(#lgTop)"/>
+              <rect x="10.6" y="7.5" width="4.8" height="17" rx="2.4" fill="url(#lgTop)"/>
+              <rect x="17.7" y="3.5" width="4.8" height="25" rx="2.4" fill="url(#lgTop)"/>
+              <rect x="24.8" y="9" width="4.8" height="14" rx="2.4" fill="url(#lgTop)"/>
+            </svg>
+            <span class="brand__word">vibes</span>
+          </a>
+
+          <div class="topbar__actions">
+            <div class="lang" role="group" aria-label="Language / Język">
+              <button type="button" data-lang="en" aria-pressed="true">EN</button>
+              <button type="button" data-lang="pl" aria-pressed="false">PL</button>
+            </div>
+            <button class="icon-btn" id="menuBtn" type="button" data-i18n-aria="topbar.menuAria" aria-label="Open menu">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                <path d="M4 7h16M4 12h16M4 17h10"/>
+              </svg>
+            </button>
+          </div>
+
+          <div class="progress" aria-hidden="true"><i></i></div>
+        </header>
+
+        <main id="main">
+          <!-- ================= Hero ================= -->
+          <section class="hero" id="top">
+            <span class="hero__kicker reveal"><i class="dot" aria-hidden="true"></i><span data-i18n="hero.kicker">Mobile experience</span></span>
+            <h1 class="reveal" data-i18n-html="hero.title">Bring ideas to life with <span class="grad-text">vibes</span></h1>
+            <p class="reveal" data-i18n="hero.sub">Create images and videos from scratch, restyle them, add music, lip sync to songs and more.</p>
+
+            <div class="hero__cta reveal">
+              <a class="btn btn--primary" href="#download" data-i18n="hero.ctaDownload">Download app</a>
+              <a class="btn btn--ghost" href="app.html" data-i18n="hero.ctaLogin">Log in</a>
+            </div>
+
+            <figure class="hero__art reveal">
+              <span class="float-chip float-chip--1">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3l14 9-14 9V3z"/></svg>
+                <span data-i18n="hero.chip1">Image → video</span>
+              </span>
+              <span class="float-chip float-chip--2">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 12h2m3-6v12m4-9v6m4-10v14m4-8h2"/></svg>
+                <span data-i18n="hero.chip2">Lip sync</span>
+              </span>
+              <span class="float-chip float-chip--3">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l10-2v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></svg>
+                <span data-i18n="hero.chip3">Add music</span>
+              </span>
+              <img src="images/hero.jpg" width="768" height="1376" alt="Collage of AI-generated scenes: neon samurai, underwater city, retro car and an astronaut" fetchpriority="high" decoding="async" />
+            </figure>
+
+            <div class="hero__scroll" aria-hidden="true">
+              <span data-i18n="hero.scroll">Scroll</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14m0 0l-6-6m6 6l6-6"/></svg>
+            </div>
+          </section>
+
+          <!-- ================= Community rail ================= -->
+          <section class="section" aria-labelledby="railTitle">
+            <span class="section__label reveal" data-i18n="rail.label">Fresh from the community</span>
+            <h2 id="railTitle" class="sr" data-i18n="rail.title">Community gallery</h2>
+            <div class="rail reveal" role="list" aria-label="Community creations">
+              <figure class="rail-card" role="listitem">
+                <img src="images/feed-1.jpg" width="768" height="1376" loading="lazy" decoding="async" alt="Bioluminescent jellyfish drifting over a neon Tokyo street" />
+                <figcaption><b data-i18n="rail.c1.t">Bioluminescent jellyfish over neon Tokyo</b><span class="vibe-tag" data-i18n="rail.tagVideo">Video</span></figcaption>
+              </figure>
+              <figure class="rail-card" role="listitem">
+                <img src="images/feed-2.jpg" width="768" height="1376" loading="lazy" decoding="async" alt="Kitten in a spacesuit floating in a pastel nebula" />
+                <figcaption><b data-i18n="rail.c2.t">Astronaut kitten in a pastel nebula</b><span class="vibe-tag" data-i18n="rail.tagImage">Image</span></figcaption>
+              </figure>
+              <figure class="rail-card" role="listitem">
+                <img src="images/feed-3.jpg" width="768" height="1376" loading="lazy" decoding="async" alt="Chrome retro sports car on a sunset desert highway" />
+                <figcaption><b data-i18n="rail.c3.t">Chrome coupe, sunset highway</b><span class="vibe-tag" data-i18n="rail.tagVideo">Video</span></figcaption>
+              </figure>
+              <figure class="rail-card" role="listitem">
+                <img src="images/feed-4.jpg" width="768" height="1376" loading="lazy" decoding="async" alt="Iridescent crystal flower blooming on black background" />
+                <figcaption><b data-i18n="rail.c4.t">Crystal bloom, macro</b><span class="vibe-tag" data-i18n="rail.tagImage">Image</span></figcaption>
+              </figure>
+            </div>
+            <div class="rail-dots" aria-hidden="true"></div>
+            <p class="swipe-hint" data-i18n="rail.hint">Swipe to explore</p>
+          </section>
+
+          <!-- ================= Ingredients ================= -->
+          <section class="section" id="ingredients" aria-labelledby="f1t">
+            <span class="section__label reveal" data-i18n="f1.label">Ingredients</span>
+            <h2 id="f1t" class="reveal" data-i18n="f1.title">Create and reuse ingredients</h2>
+            <p class="lead reveal" data-i18n="f1.text">Match the look and feel of any image or video by referencing the style, character or object. Turn references into reusable ingredients for a consistent story.</p>
+            <figure class="section__media reveal">
+              <img src="images/ingredients.jpg" width="1408" height="768" loading="lazy" decoding="async" alt="The same red-haired character rendered in four consistent styles" />
+            </figure>
+            <div class="chips reveal">
+              <span class="chip" data-i18n="f1.chip1">Style match</span>
+              <span class="chip" data-i18n="f1.chip2">Characters</span>
+              <span class="chip" data-i18n="f1.chip3">Objects</span>
+              <span class="chip" data-i18n="f1.chip4">Reusable</span>
+            </div>
+          </section>
+
+          <!-- ================= Timeline ================= -->
+          <section class="section" id="timeline" aria-labelledby="f2t">
+            <span class="section__label reveal" data-i18n="f2.label">Timeline</span>
+            <h2 id="f2t" class="reveal" data-i18n="f2.title">Get more precision and control</h2>
+            <p class="lead reveal" data-i18n="f2.text">Realize your vision by creating cinematic media and stitching together images, videos, text, music, voiceover and more.</p>
+            <figure class="section__media reveal">
+              <img src="images/timeline.jpg" width="1408" height="768" loading="lazy" decoding="async" alt="Mobile editing timeline with filmstrip clips and audio waveform" />
+            </figure>
+            <div class="chips reveal">
+              <span class="chip" data-i18n="f2.chip1">Images</span>
+              <span class="chip" data-i18n="f2.chip2">Video</span>
+              <span class="chip" data-i18n="f2.chip3">Text</span>
+              <span class="chip" data-i18n="f2.chip4">Music</span>
+              <span class="chip" data-i18n="f2.chip5">Voiceover</span>
+            </div>
+          </section>
+
+          <!-- ================= Workflows ================= -->
+          <section class="section" id="workflows" aria-labelledby="f3t">
+            <span class="section__label reveal" data-i18n="f3.label">Workflows</span>
+            <h2 id="f3t" class="reveal" data-i18n="f3.title">Streamline your workflows</h2>
+            <p class="lead reveal" data-i18n="f3.text">Use tools built for creators, with creators. Optimize your workflow with a projects-based layout. Once you’re ready, share your creations on the Vibes app.</p>
+            <figure class="section__media reveal">
+              <img src="images/workflows.jpg" width="1408" height="768" loading="lazy" decoding="async" alt="Phone showing a dark projects dashboard with artwork thumbnails" />
+            </figure>
+            <div class="chips reveal">
+              <span class="chip" data-i18n="f3.chip1">Projects</span>
+              <span class="chip" data-i18n="f3.chip2">Sharing</span>
+              <span class="chip" data-i18n="f3.chip3">Creator tools</span>
+            </div>
+          </section>
+
+          <!-- ================= Mobile perks ================= -->
+          <section class="section" id="mobile" aria-labelledby="pk">
+            <span class="section__label reveal" data-i18n="perks.label">Built for phones</span>
+            <h2 id="pk" class="reveal" data-i18n="perks.title">A mobile experience, not a shrunken site</h2>
+            <p class="lead reveal" data-i18n="perks.sub">Every screen is designed thumb-first: reachable controls, native gestures and zero hover-only tricks.</p>
+
+            <div class="perks">
+              <article class="perk reveal">
+                <span class="perk__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13V5.5a1.5 1.5 0 013 0V12m0-1.5a1.5 1.5 0 013 0V12m0-1a1.5 1.5 0 013 0v3.5a6 6 0 01-6 6h-1.6a6 6 0 01-4.7-2.3L4 15.4a1.6 1.6 0 012.5-2L8 15"/></svg>
+                </span>
+                <div><h3 data-i18n="perks.p1t">One-thumb reach</h3><p data-i18n="perks.p1d">Primary actions live in the thumb zone — a bottom bar and generous 48 px touch targets.</p></div>
+              </article>
+              <article class="perk reveal">
+                <span class="perk__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h12m0 0l-3-3m3 3l-3 3M20 16H8m0 0l3-3m-3 3l3 3"/></svg>
+                </span>
+                <div><h3 data-i18n="perks.p2t">Swipe-native</h3><p data-i18n="perks.p2d">Feeds and carousels use native scroll snapping with momentum; nothing depends on hover.</p></div>
+              </article>
+              <article class="perk reveal">
+                <span class="perk__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+                </span>
+                <div><h3 data-i18n="perks.p3t">Installable</h3><p data-i18n="perks.p3d">Add Vibes to your home screen for a full-screen, app-like experience — it even works offline.</p></div>
+              </article>
+              <article class="perk reveal">
+                <span class="perk__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="3"/><path d="M10.5 4.5h3"/></svg>
+                </span>
+                <div><h3 data-i18n="perks.p4t">Notch-aware</h3><p data-i18n="perks.p4d">Layout respects safe-area insets, notches and rotates gracefully to landscape.</p></div>
+              </article>
+            </div>
+          </section>
+
+          <!-- ================= App demo ================= -->
+          <section class="section" id="demo" aria-labelledby="dt">
+            <div class="demo-card reveal">
+              <span class="section__label" data-i18n="demo.label">Live demo</span>
+              <h2 id="dt" data-i18n="demo.title">Try the mobile app right now</h2>
+              <p data-i18n="demo.text">An interactive mock of the Vibes app: a snapping feed, a create screen with a simulated render, projects and a profile — all in your browser.</p>
+              <a class="btn btn--primary" href="app.html" data-i18n="demo.cta">Open app demo</a>
+              <span class="demo-card__phone" aria-hidden="true"><img src="images/feed-2.jpg" width="768" height="1376" loading="lazy" alt="" /></span>
+            </div>
+          </section>
+
+          <!-- ================= Final CTA ================= -->
+          <section class="cta" id="download" aria-labelledby="ct">
+            <h2 id="ct" class="reveal" data-i18n="cta.title">Welcome to Vibes.ai</h2>
+            <p class="reveal" data-i18n="cta.sub">Your pocket studio for images, video and sound.</p>
+            <a class="btn btn--primary btn--block reveal" href="app.html" data-i18n="cta.btn">Download app</a>
+            <div class="cta__stores reveal"><span data-i18n="cta.stores">iOS · Android · Web</span></div>
+          </section>
+        </main>
+
+        <!-- ================= Footer ================= -->
+        <footer class="footer">
+          <nav class="footer__grid" aria-label="Footer">
+            <a href="#" data-i18n="footer.privacy">Privacy</a>
+            <a href="#" data-i18n="footer.terms">Terms</a>
+            <a href="#" data-i18n="footer.cookies">Cookies</a>
+            <a href="#" data-i18n="footer.help">Help</a>
+          </nav>
+          <p class="footer__note" data-i18n="footer.note">Unofficial mobile concept of vibes.ai built as a demo. Not affiliated with Meta.</p>
+          <p class="footer__meta">
+            <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+              <rect x="3.5" y="11" width="4.8" height="10" rx="2.4" fill="#6d6d80"/>
+              <rect x="10.6" y="7.5" width="4.8" height="17" rx="2.4" fill="#6d6d80"/>
+              <rect x="17.7" y="3.5" width="4.8" height="25" rx="2.4" fill="#6d6d80"/>
+              <rect x="24.8" y="9" width="4.8" height="14" rx="2.4" fill="#6d6d80"/>
+            </svg>
+            <span data-i18n="footer.rights">© 2026 Vibes. All rights reserved.</span>
+          </p>
+        </footer>
+
+        <!-- ================= Sticky dock ================= -->
+        <div class="dock" role="region" aria-label="Download">
+          <div class="dock__inner">
+            <a class="btn btn--primary" href="#download" data-i18n="dock.btn">Download app</a>
+            <span class="dock__note" data-i18n="dock.note">Free</span>
+          </div>
+        </div>
+
+        <!-- ================= Cookie sheet ================= -->
+        <div class="cookie" hidden role="region" aria-label="Cookies">
+          <div class="cookie__panel">
+            <p data-i18n-html="cookie.text">We use cookies that are essential to operate and provide our services. Learn more about our <a href="#" rel="noopener">Cookies Notice</a>.</p>
+            <div class="cookie__actions">
+              <button class="btn btn--primary" type="button" data-cookie-accept data-i18n="cookie.btn">Continue</button>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /.device__screen -->
+    </div><!-- /.device -->
+  </div><!-- /.frame-stage -->
+
+  <!-- ================= Menu sheet ================= -->
+  <div class="sheet" id="menuSheet" hidden>
+    <div class="sheet__backdrop" data-close></div>
+    <div class="sheet__panel" role="dialog" aria-modal="true" aria-label="Menu">
+      <div class="sheet__head">
+        <span class="brand__word grad-text">vibes</span>
+        <button class="icon-btn" type="button" data-close aria-label="Close menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <nav aria-label="Main">
+        <a href="#ingredients"><span data-i18n="f1.label">Ingredients</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+        <a href="#timeline"><span data-i18n="f2.label">Timeline</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+        <a href="#workflows"><span data-i18n="f3.label">Workflows</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+        <a href="#mobile"><span data-i18n="perks.label">Built for phones</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+        <a href="app.html"><span data-i18n="demo.cta">Open app demo</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+      </nav>
+      <div class="sheet__foot">
+        <div class="sheet__lang">
+          <span data-i18n="menu.langLabel">Language</span>
+          <div class="lang" role="group" aria-label="Language / Język">
+            <button type="button" data-lang="en" aria-pressed="true">EN</button>
+            <button type="button" data-lang="pl" aria-pressed="false">PL</button>
+          </div>
+        </div>
+        <a class="btn btn--ghost" href="#" data-i18n="menu.login">Log in</a>
+        <a class="btn btn--primary" href="#download" data-close data-i18n="menu.download">Download app</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame-caption" aria-hidden="true">
+    <span>vibes.ai · mobile concept</span>
+    <a href="?noframe=1">full width</a>
+    <a href="app.html">app demo</a>
+  </div>
+</body>
+</html>
