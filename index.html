@@ -1,314 +1,370 @@
 <!doctype html>
-<html lang="en">
+<html lang="pl">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Vibes — bring ideas to life with vibes · mobile</title>
-  <meta name="description" content="Vibes on your phone: create images and videos from scratch, restyle them, add music, lip sync to songs and more." />
-  <meta name="theme-color" content="#08080c" />
+  <title>vibes.ai · mobile viewer</title>
+  <meta name="description" content="Mobilna nakładka przeglądająca oryginalną stronę vibes.ai — bez kopii treści, strona ładowana jest na żywo z vibes.ai." />
+  <meta name="theme-color" content="#0b0b0f" />
   <meta name="color-scheme" content="dark" />
-
-  <!-- PWA / home-screen -->
-  <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="icon" type="image/png" sizes="192x192" href="images/icon-192.png" />
-  <link rel="apple-touch-icon" href="images/apple-touch-icon.png" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Vibes" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0b0f'/%3E%3Crect x='7' y='5' width='18' height='22' rx='3' fill='none' stroke='%23ec4899' stroke-width='2'/%3E%3Cpath d='M11 11h10M11 16h10M11 21h6' stroke='%23ec4899' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E" />
+  <style>
+    :root {
+      --bg: #0b0b0f;
+      --bar: rgba(14, 14, 20, 0.92);
+      --line: rgba(255, 255, 255, 0.12);
+      --text: #f4f4f7;
+      --muted: #9d9db0;
+      --accent: #ec4899;
+      --safe-t: env(safe-area-inset-top, 0px);
+      --safe-b: env(safe-area-inset-bottom, 0px);
+      --safe-l: env(safe-area-inset-left, 0px);
+      --safe-r: env(safe-area-inset-right, 0px);
+      --tap: 46px;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0;
+      height: 100vh; height: 100dvh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+      overscroll-behavior: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+    a { color: inherit; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
 
-  <!-- Social -->
-  <meta property="og:type" content="website" />
-  <meta property="og:title" content="Vibes — bring ideas to life with vibes" />
-  <meta property="og:description" content="Create images and videos from scratch, restyle them, add music, lip sync to songs and more. Now mobile-first." />
-  <meta property="og:image" content="images/hero.jpg" />
+    /* ---------- top bar ---------- */
+    .bar {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      min-height: calc(52px + var(--safe-t));
+      padding: var(--safe-t) calc(10px + var(--safe-r)) 6px calc(12px + var(--safe-l));
+      background: var(--bar);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      z-index: 20;
+    }
+    .bar__title { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+    .bar__title b { font-size: 16.5px; font-weight: 800; letter-spacing: -0.02em; }
+    .bar__title span { font-size: 11.5px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap; }
+    .bar__actions { display: flex; align-items: center; gap: 6px; }
+    .icon-btn {
+      display: inline-grid; place-items: center;
+      width: var(--tap); height: var(--tap);
+      border-radius: 13px;
+      color: var(--text);
+      transition: background-color 0.2s ease;
+    }
+    .icon-btn:active { background: rgba(255, 255, 255, 0.12); }
+    .icon-btn svg { width: 21px; height: 21px; }
+    .lang {
+      display: inline-flex; padding: 3px; border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08); border: 1px solid var(--line);
+    }
+    .lang button { min-width: 36px; min-height: 32px; border-radius: 999px; font-size: 12px; font-weight: 700; color: var(--muted); }
+    .lang button[aria-pressed="true"] { background: var(--accent); color: #fff; }
 
-  <link rel="preload" as="image" href="images/hero.jpg" fetchpriority="high" />
-  <link rel="stylesheet" href="css/base.css" />
-  <link rel="stylesheet" href="css/landing.css" />
-  <script defer src="js/i18n.js"></script>
-  <script defer src="js/frame.js"></script>
-  <script defer src="js/main.js"></script>
+    /* ---------- stage + frame ---------- */
+    .stage { position: relative; min-height: 0; overflow: hidden; background: #fff; }
+    .pan { position: relative; width: 100%; height: 100%; overflow: hidden; -webkit-overflow-scrolling: touch; }
+    .pan.is-pan { overflow: auto; overscroll-behavior: contain; }
+    #frame {
+      position: absolute; top: 0; left: 0;
+      border: 0; background: #fff;
+      transform-origin: top left;
+      display: block;
+    }
+
+    .loader {
+      position: absolute; inset: 0; z-index: 10;
+      display: grid; place-items: center; gap: 0;
+      background: var(--bg);
+      transition: opacity 0.35s ease;
+    }
+    .loader.is-off { opacity: 0; pointer-events: none; }
+    .loader__box { display: grid; justify-items: center; gap: 14px; }
+    .spinner {
+      width: 34px; height: 34px; border-radius: 50%;
+      border: 3px solid rgba(255, 255, 255, 0.15);
+      border-top-color: var(--accent);
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loader p { margin: 0; color: var(--muted); font-size: 13.5px; }
+
+    /* ---------- bottom dock ---------- */
+    .dock {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      padding: 8px calc(10px + var(--safe-r)) calc(8px + var(--safe-b)) calc(10px + var(--safe-l));
+      background: var(--bar);
+      border-top: 1px solid var(--line);
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      z-index: 20;
+    }
+    .zoom { display: flex; align-items: center; gap: 2px; }
+    .zoom button {
+      width: var(--tap); height: var(--tap);
+      border-radius: 13px; font-size: 21px; font-weight: 700; line-height: 1;
+      display: grid; place-items: center;
+      background: rgba(255, 255, 255, 0.07); border: 1px solid var(--line);
+    }
+    .zoom button:active { background: rgba(255, 255, 255, 0.16); }
+    .zoom output { min-width: 58px; text-align: center; font-size: 13px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .seg {
+      display: inline-flex; padding: 3px; gap: 2px; border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08); border: 1px solid var(--line);
+    }
+    .seg button { min-height: 38px; padding: 0 16px; border-radius: 999px; font-size: 13px; font-weight: 650; color: var(--muted); }
+    .seg button[aria-pressed="true"] { background: rgba(255, 255, 255, 0.16); color: var(--text); }
+    .dock__hint { font-size: 11.5px; color: var(--muted); max-width: 34vw; text-align: right; line-height: 1.3; }
+
+    /* ---------- info sheet ---------- */
+    .sheet { position: fixed; inset: 0; z-index: 40; }
+    .sheet[hidden] { display: none; }
+    .sheet__backdrop { position: absolute; inset: 0; background: rgba(3, 3, 6, 0.6); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); opacity: 0; transition: opacity 0.3s ease; }
+    .sheet__panel {
+      position: absolute; inset: auto 0 0 0;
+      max-height: 82%;
+      overflow-y: auto;
+      padding: 18px calc(16px + var(--safe-r)) calc(20px + var(--safe-b)) calc(16px + var(--safe-l));
+      border-radius: 26px 26px 0 0;
+      background: #14141c;
+      border-top: 1px solid var(--line);
+      transform: translateY(102%);
+      transition: transform 0.38s cubic-bezier(0.2, 0.7, 0.2, 1);
+    }
+    .sheet.is-open .sheet__backdrop { opacity: 1; }
+    .sheet.is-open .sheet__panel { transform: none; }
+    .sheet__grab { width: 42px; height: 4px; border-radius: 4px; background: rgba(255, 255, 255, 0.22); margin: 0 auto 14px; }
+    .sheet h2 { margin: 0 0 10px; font-size: 19px; letter-spacing: -0.02em; }
+    .sheet p { margin: 0 0 10px; color: var(--muted); font-size: 14px; line-height: 1.55; }
+    .sheet p b { color: var(--text); }
+    .sheet .btn {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; min-height: 50px; margin-top: 6px;
+      border-radius: 999px; font-weight: 700; font-size: 15.5px;
+      background: linear-gradient(120deg, #7c3aed, #ec4899 60%, #f59e0b);
+      color: #fff; text-decoration: none;
+    }
+    .sheet .btn--ghost { background: rgba(255, 255, 255, 0.08); border: 1px solid var(--line); color: var(--text); }
+    .sheet__foot { margin-top: 12px; font-size: 12px; color: #6d6d80; line-height: 1.5; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+    }
+  </style>
 </head>
+<body>
 
-<body data-title-key="doc.title">
-  <a class="skip-link" href="#main" data-i18n="skip">Skip to content</a>
+  <header class="bar">
+    <div class="bar__title">
+      <b>vibes.ai</b>
+      <span data-i18n="bar.tag">mobile viewer</span>
+    </div>
+    <div class="bar__actions">
+      <div class="lang" role="group" aria-label="Language / Język">
+        <button type="button" data-lang="pl" aria-pressed="true">PL</button>
+        <button type="button" data-lang="en" aria-pressed="false">EN</button>
+      </div>
+      <button class="icon-btn" id="reloadBtn" type="button" data-i18n-aria="act.reload" aria-label="Odśwież">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 10-2.3 6.3M20 5v6h-6"/></svg>
+      </button>
+      <a class="icon-btn" id="externalBtn" href="https://vibes.ai/" target="_blank" rel="noopener" data-i18n-aria="act.external" aria-label="Otwórz oryginał">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 13v6a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h6"/></svg>
+      </a>
+      <button class="icon-btn" id="infoBtn" type="button" data-i18n-aria="act.info" aria-label="Informacje">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+      </button>
+    </div>
+  </header>
 
-  <div class="frame-stage">
-    <div class="device">
-      <div class="device__screen">
+  <main class="stage" id="stage">
+    <div class="pan" id="pan">
+      <iframe id="frame" src="https://vibes.ai/" title="vibes.ai" allow="fullscreen; clipboard-write; autoplay" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals allow-presentation"></iframe>
+    </div>
+    <div class="loader" id="loader">
+      <div class="loader__box">
+        <div class="spinner" aria-hidden="true"></div>
+        <p data-i18n="loader">Ładowanie vibes.ai…</p>
+      </div>
+    </div>
+  </main>
 
-        <!-- ================= Top bar ================= -->
-        <header class="topbar">
-          <a class="brand" href="#top" aria-label="Vibes — home">
-            <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
-              <defs>
-                <linearGradient id="lgTop" x1="2" y1="30" x2="30" y2="2" gradientUnits="userSpaceOnUse">
-                  <stop stop-color="#7c3aed"/><stop offset=".55" stop-color="#ec4899"/><stop offset="1" stop-color="#f59e0b"/>
-                </linearGradient>
-              </defs>
-              <rect x="3.5" y="11" width="4.8" height="10" rx="2.4" fill="url(#lgTop)"/>
-              <rect x="10.6" y="7.5" width="4.8" height="17" rx="2.4" fill="url(#lgTop)"/>
-              <rect x="17.7" y="3.5" width="4.8" height="25" rx="2.4" fill="url(#lgTop)"/>
-              <rect x="24.8" y="9" width="4.8" height="14" rx="2.4" fill="url(#lgTop)"/>
-            </svg>
-            <span class="brand__word">vibes</span>
-          </a>
+  <nav class="dock" aria-label="Viewer controls">
+    <div class="zoom">
+      <button type="button" id="zoomOut" aria-label="−">−</button>
+      <output id="zoomLabel" aria-live="polite">100%</output>
+      <button type="button" id="zoomIn" aria-label="+">+</button>
+    </div>
+    <div class="seg" role="group" aria-label="View mode">
+      <button type="button" data-mode="fit" aria-pressed="true" data-i18n="mode.fit">Dopasuj</button>
+      <button type="button" data-mode="pan" aria-pressed="false" data-i18n="mode.pan">1:1</button>
+    </div>
+    <p class="dock__hint" data-i18n="dock.hint">Przesuwaj palcem, aby scrollować stronę w ramce</p>
+  </nav>
 
-          <div class="topbar__actions">
-            <div class="lang" role="group" aria-label="Language / Język">
-              <button type="button" data-lang="en" aria-pressed="true">EN</button>
-              <button type="button" data-lang="pl" aria-pressed="false">PL</button>
-            </div>
-            <button class="icon-btn" id="menuBtn" type="button" data-i18n-aria="topbar.menuAria" aria-label="Open menu">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-                <path d="M4 7h16M4 12h16M4 17h10"/>
-              </svg>
-            </button>
-          </div>
-
-          <div class="progress" aria-hidden="true"><i></i></div>
-        </header>
-
-        <main id="main">
-          <!-- ================= Hero ================= -->
-          <section class="hero" id="top">
-            <span class="hero__kicker reveal"><i class="dot" aria-hidden="true"></i><span data-i18n="hero.kicker">Mobile experience</span></span>
-            <h1 class="reveal" data-i18n-html="hero.title">Bring ideas to life with <span class="grad-text">vibes</span></h1>
-            <p class="reveal" data-i18n="hero.sub">Create images and videos from scratch, restyle them, add music, lip sync to songs and more.</p>
-
-            <div class="hero__cta reveal">
-              <a class="btn btn--primary" href="#download" data-i18n="hero.ctaDownload">Download app</a>
-              <a class="btn btn--ghost" href="app.html" data-i18n="hero.ctaLogin">Log in</a>
-            </div>
-
-            <figure class="hero__art reveal">
-              <span class="float-chip float-chip--1">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3l14 9-14 9V3z"/></svg>
-                <span data-i18n="hero.chip1">Image → video</span>
-              </span>
-              <span class="float-chip float-chip--2">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 12h2m3-6v12m4-9v6m4-10v14m4-8h2"/></svg>
-                <span data-i18n="hero.chip2">Lip sync</span>
-              </span>
-              <span class="float-chip float-chip--3">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l10-2v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></svg>
-                <span data-i18n="hero.chip3">Add music</span>
-              </span>
-              <img src="images/hero.jpg" width="768" height="1376" alt="Collage of AI-generated scenes: neon samurai, underwater city, retro car and an astronaut" fetchpriority="high" decoding="async" />
-            </figure>
-
-            <div class="hero__scroll" aria-hidden="true">
-              <span data-i18n="hero.scroll">Scroll</span>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14m0 0l-6-6m6 6l6-6"/></svg>
-            </div>
-          </section>
-
-          <!-- ================= Community rail ================= -->
-          <section class="section" aria-labelledby="railTitle">
-            <span class="section__label reveal" data-i18n="rail.label">Fresh from the community</span>
-            <h2 id="railTitle" class="sr" data-i18n="rail.title">Community gallery</h2>
-            <div class="rail reveal" role="list" aria-label="Community creations">
-              <figure class="rail-card" role="listitem">
-                <img src="images/feed-1.jpg" width="768" height="1376" loading="lazy" decoding="async" alt="Bioluminescent jellyfish drifting over a neon Tokyo street" />
-                <figcaption><b data-i18n="rail.c1.t">Bioluminescent jellyfish over neon Tokyo</b><span class="vibe-tag" data-i18n="rail.tagVideo">Video</span></figcaption>
-              </figure>
-              <figure class="rail-card" role="listitem">
-                <img src="images/feed-2.jpg" width="768" height="1376" loading="lazy" decoding="async" alt="Kitten in a spacesuit floating in a pastel nebula" />
-                <figcaption><b data-i18n="rail.c2.t">Astronaut kitten in a pastel nebula</b><span class="vibe-tag" data-i18n="rail.tagImage">Image</span></figcaption>
-              </figure>
-              <figure class="rail-card" role="listitem">
-                <img src="images/feed-3.jpg" width="768" height="1376" loading="lazy" decoding="async" alt="Chrome retro sports car on a sunset desert highway" />
-                <figcaption><b data-i18n="rail.c3.t">Chrome coupe, sunset highway</b><span class="vibe-tag" data-i18n="rail.tagVideo">Video</span></figcaption>
-              </figure>
-              <figure class="rail-card" role="listitem">
-                <img src="images/feed-4.jpg" width="768" height="1376" loading="lazy" decoding="async" alt="Iridescent crystal flower blooming on black background" />
-                <figcaption><b data-i18n="rail.c4.t">Crystal bloom, macro</b><span class="vibe-tag" data-i18n="rail.tagImage">Image</span></figcaption>
-              </figure>
-            </div>
-            <div class="rail-dots" aria-hidden="true"></div>
-            <p class="swipe-hint" data-i18n="rail.hint">Swipe to explore</p>
-          </section>
-
-          <!-- ================= Ingredients ================= -->
-          <section class="section" id="ingredients" aria-labelledby="f1t">
-            <span class="section__label reveal" data-i18n="f1.label">Ingredients</span>
-            <h2 id="f1t" class="reveal" data-i18n="f1.title">Create and reuse ingredients</h2>
-            <p class="lead reveal" data-i18n="f1.text">Match the look and feel of any image or video by referencing the style, character or object. Turn references into reusable ingredients for a consistent story.</p>
-            <figure class="section__media reveal">
-              <img src="images/ingredients.jpg" width="1408" height="768" loading="lazy" decoding="async" alt="The same red-haired character rendered in four consistent styles" />
-            </figure>
-            <div class="chips reveal">
-              <span class="chip" data-i18n="f1.chip1">Style match</span>
-              <span class="chip" data-i18n="f1.chip2">Characters</span>
-              <span class="chip" data-i18n="f1.chip3">Objects</span>
-              <span class="chip" data-i18n="f1.chip4">Reusable</span>
-            </div>
-          </section>
-
-          <!-- ================= Timeline ================= -->
-          <section class="section" id="timeline" aria-labelledby="f2t">
-            <span class="section__label reveal" data-i18n="f2.label">Timeline</span>
-            <h2 id="f2t" class="reveal" data-i18n="f2.title">Get more precision and control</h2>
-            <p class="lead reveal" data-i18n="f2.text">Realize your vision by creating cinematic media and stitching together images, videos, text, music, voiceover and more.</p>
-            <figure class="section__media reveal">
-              <img src="images/timeline.jpg" width="1408" height="768" loading="lazy" decoding="async" alt="Mobile editing timeline with filmstrip clips and audio waveform" />
-            </figure>
-            <div class="chips reveal">
-              <span class="chip" data-i18n="f2.chip1">Images</span>
-              <span class="chip" data-i18n="f2.chip2">Video</span>
-              <span class="chip" data-i18n="f2.chip3">Text</span>
-              <span class="chip" data-i18n="f2.chip4">Music</span>
-              <span class="chip" data-i18n="f2.chip5">Voiceover</span>
-            </div>
-          </section>
-
-          <!-- ================= Workflows ================= -->
-          <section class="section" id="workflows" aria-labelledby="f3t">
-            <span class="section__label reveal" data-i18n="f3.label">Workflows</span>
-            <h2 id="f3t" class="reveal" data-i18n="f3.title">Streamline your workflows</h2>
-            <p class="lead reveal" data-i18n="f3.text">Use tools built for creators, with creators. Optimize your workflow with a projects-based layout. Once you’re ready, share your creations on the Vibes app.</p>
-            <figure class="section__media reveal">
-              <img src="images/workflows.jpg" width="1408" height="768" loading="lazy" decoding="async" alt="Phone showing a dark projects dashboard with artwork thumbnails" />
-            </figure>
-            <div class="chips reveal">
-              <span class="chip" data-i18n="f3.chip1">Projects</span>
-              <span class="chip" data-i18n="f3.chip2">Sharing</span>
-              <span class="chip" data-i18n="f3.chip3">Creator tools</span>
-            </div>
-          </section>
-
-          <!-- ================= Mobile perks ================= -->
-          <section class="section" id="mobile" aria-labelledby="pk">
-            <span class="section__label reveal" data-i18n="perks.label">Built for phones</span>
-            <h2 id="pk" class="reveal" data-i18n="perks.title">A mobile experience, not a shrunken site</h2>
-            <p class="lead reveal" data-i18n="perks.sub">Every screen is designed thumb-first: reachable controls, native gestures and zero hover-only tricks.</p>
-
-            <div class="perks">
-              <article class="perk reveal">
-                <span class="perk__icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13V5.5a1.5 1.5 0 013 0V12m0-1.5a1.5 1.5 0 013 0V12m0-1a1.5 1.5 0 013 0v3.5a6 6 0 01-6 6h-1.6a6 6 0 01-4.7-2.3L4 15.4a1.6 1.6 0 012.5-2L8 15"/></svg>
-                </span>
-                <div><h3 data-i18n="perks.p1t">One-thumb reach</h3><p data-i18n="perks.p1d">Primary actions live in the thumb zone — a bottom bar and generous 48 px touch targets.</p></div>
-              </article>
-              <article class="perk reveal">
-                <span class="perk__icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h12m0 0l-3-3m3 3l-3 3M20 16H8m0 0l3-3m-3 3l3 3"/></svg>
-                </span>
-                <div><h3 data-i18n="perks.p2t">Swipe-native</h3><p data-i18n="perks.p2d">Feeds and carousels use native scroll snapping with momentum; nothing depends on hover.</p></div>
-              </article>
-              <article class="perk reveal">
-                <span class="perk__icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
-                </span>
-                <div><h3 data-i18n="perks.p3t">Installable</h3><p data-i18n="perks.p3d">Add Vibes to your home screen for a full-screen, app-like experience — it even works offline.</p></div>
-              </article>
-              <article class="perk reveal">
-                <span class="perk__icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="3"/><path d="M10.5 4.5h3"/></svg>
-                </span>
-                <div><h3 data-i18n="perks.p4t">Notch-aware</h3><p data-i18n="perks.p4d">Layout respects safe-area insets, notches and rotates gracefully to landscape.</p></div>
-              </article>
-            </div>
-          </section>
-
-          <!-- ================= App demo ================= -->
-          <section class="section" id="demo" aria-labelledby="dt">
-            <div class="demo-card reveal">
-              <span class="section__label" data-i18n="demo.label">Live demo</span>
-              <h2 id="dt" data-i18n="demo.title">Try the mobile app right now</h2>
-              <p data-i18n="demo.text">An interactive mock of the Vibes app: a snapping feed, a create screen with a simulated render, projects and a profile — all in your browser.</p>
-              <a class="btn btn--primary" href="app.html" data-i18n="demo.cta">Open app demo</a>
-              <span class="demo-card__phone" aria-hidden="true"><img src="images/feed-2.jpg" width="768" height="1376" loading="lazy" alt="" /></span>
-            </div>
-          </section>
-
-          <!-- ================= Final CTA ================= -->
-          <section class="cta" id="download" aria-labelledby="ct">
-            <h2 id="ct" class="reveal" data-i18n="cta.title">Welcome to Vibes.ai</h2>
-            <p class="reveal" data-i18n="cta.sub">Your pocket studio for images, video and sound.</p>
-            <a class="btn btn--primary btn--block reveal" href="app.html" data-i18n="cta.btn">Download app</a>
-            <div class="cta__stores reveal"><span data-i18n="cta.stores">iOS · Android · Web</span></div>
-          </section>
-        </main>
-
-        <!-- ================= Footer ================= -->
-        <footer class="footer">
-          <nav class="footer__grid" aria-label="Footer">
-            <a href="#" data-i18n="footer.privacy">Privacy</a>
-            <a href="#" data-i18n="footer.terms">Terms</a>
-            <a href="#" data-i18n="footer.cookies">Cookies</a>
-            <a href="#" data-i18n="footer.help">Help</a>
-          </nav>
-          <p class="footer__note" data-i18n="footer.note">Unofficial mobile concept of vibes.ai built as a demo. Not affiliated with Meta.</p>
-          <p class="footer__meta">
-            <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
-              <rect x="3.5" y="11" width="4.8" height="10" rx="2.4" fill="#6d6d80"/>
-              <rect x="10.6" y="7.5" width="4.8" height="17" rx="2.4" fill="#6d6d80"/>
-              <rect x="17.7" y="3.5" width="4.8" height="25" rx="2.4" fill="#6d6d80"/>
-              <rect x="24.8" y="9" width="4.8" height="14" rx="2.4" fill="#6d6d80"/>
-            </svg>
-            <span data-i18n="footer.rights">© 2026 Vibes. All rights reserved.</span>
-          </p>
-        </footer>
-
-        <!-- ================= Sticky dock ================= -->
-        <div class="dock" role="region" aria-label="Download">
-          <div class="dock__inner">
-            <a class="btn btn--primary" href="#download" data-i18n="dock.btn">Download app</a>
-            <span class="dock__note" data-i18n="dock.note">Free</span>
-          </div>
-        </div>
-
-        <!-- ================= Cookie sheet ================= -->
-        <div class="cookie" hidden role="region" aria-label="Cookies">
-          <div class="cookie__panel">
-            <p data-i18n-html="cookie.text">We use cookies that are essential to operate and provide our services. Learn more about our <a href="#" rel="noopener">Cookies Notice</a>.</p>
-            <div class="cookie__actions">
-              <button class="btn btn--primary" type="button" data-cookie-accept data-i18n="cookie.btn">Continue</button>
-            </div>
-          </div>
-        </div>
-
-      </div><!-- /.device__screen -->
-    </div><!-- /.device -->
-  </div><!-- /.frame-stage -->
-
-  <!-- ================= Menu sheet ================= -->
-  <div class="sheet" id="menuSheet" hidden>
+  <div class="sheet" id="infoSheet" hidden>
     <div class="sheet__backdrop" data-close></div>
-    <div class="sheet__panel" role="dialog" aria-modal="true" aria-label="Menu">
-      <div class="sheet__head">
-        <span class="brand__word grad-text">vibes</span>
-        <button class="icon-btn" type="button" data-close aria-label="Close menu">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
-        </button>
-      </div>
-      <nav aria-label="Main">
-        <a href="#ingredients"><span data-i18n="f1.label">Ingredients</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
-        <a href="#timeline"><span data-i18n="f2.label">Timeline</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
-        <a href="#workflows"><span data-i18n="f3.label">Workflows</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
-        <a href="#mobile"><span data-i18n="perks.label">Built for phones</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
-        <a href="app.html"><span data-i18n="demo.cta">Open app demo</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
-      </nav>
-      <div class="sheet__foot">
-        <div class="sheet__lang">
-          <span data-i18n="menu.langLabel">Language</span>
-          <div class="lang" role="group" aria-label="Language / Język">
-            <button type="button" data-lang="en" aria-pressed="true">EN</button>
-            <button type="button" data-lang="pl" aria-pressed="false">PL</button>
-          </div>
-        </div>
-        <a class="btn btn--ghost" href="#" data-i18n="menu.login">Log in</a>
-        <a class="btn btn--primary" href="#download" data-close data-i18n="menu.download">Download app</a>
-      </div>
+    <div class="sheet__panel" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
+      <div class="sheet__grab" aria-hidden="true"></div>
+      <h2 id="infoTitle" data-i18n="info.title">Jak to działa?</h2>
+      <p data-i18n-html="info.p1"><b>To nie kopia.</b> Ta nakładka nie przechowuje żadnych treści vibes.ai — oryginalna strona jest ładowana na żywo z vibes.ai do ramki poniżej paska.</p>
+      <p data-i18n-html="info.p2"><b>Tryb „Dopasuj”</b> skaluje pulpitową wersję strony do szerokości telefonu (zoom − / + zmienia wirtualną szerokość). <b>Tryb „1:1”</b> pokazuje stronę w pełnej ostrości — przewijasz wtedy także w poziomie.</p>
+      <p data-i18n-html="info.p3"><b>Pusta ramka lub komunikat o blokadzie?</b> Oznacza to, że vibes.ai wysyła nagłówki X-Frame-Options / CSP i zabrania osadzania w iframe. Wtedy zostaje przycisk poniżej — otwiera oryginał w nowej karcie.</p>
+      <a class="btn" href="https://vibes.ai/" target="_blank" rel="noopener" data-i18n="info.open">Otwórz oryginał: vibes.ai</a>
+      <button class="btn btn--ghost" type="button" data-close data-i18n="info.close">Zamknij</button>
+      <p class="sheet__foot" data-i18n="info.foot">Nieoficjalna nakładka przeglądarkowa. Wszystkie treści i znaki towarowe należą do vibes.ai / Meta. Projekt nie jest z nimi powiązany.</p>
     </div>
   </div>
 
-  <div class="frame-caption" aria-hidden="true">
-    <span>vibes.ai · mobile concept</span>
-    <a href="?noframe=1">full width</a>
-    <a href="app.html">app demo</a>
-  </div>
+  <script>
+  (function () {
+    "use strict";
+
+    /* ================= i18n (chrome only) ================= */
+    var DICT = {
+      pl: {
+        "bar.tag": "mobile viewer",
+        "act.reload": "Odśwież",
+        "act.external": "Otwórz oryginał w nowej karcie",
+        "act.info": "Informacje",
+        "loader": "Ładowanie vibes.ai…",
+        "mode.fit": "Dopasuj",
+        "mode.pan": "1:1",
+        "dock.hint": "Przesuwaj palcem, aby scrollować stronę w ramce",
+        "info.title": "Jak to działa?",
+        "info.p1": "<b>To nie kopia.</b> Ta nakładka nie przechowuje żadnych treści vibes.ai — oryginalna strona jest ładowana na żywo z vibes.ai do ramki pod paskiem.",
+        "info.p2": "<b>Tryb „Dopasuj”</b> skaluje pulpitową wersję strony do szerokości telefonu (zoom − / + zmienia wirtualną szerokość). <b>Tryb „1:1”</b> pokazuje stronę w pełnej ostrości — przewijasz wtedy także w poziomie.",
+        "info.p3": "<b>Pusta ramka lub komunikat o blokadzie?</b> Oznacza to, że vibes.ai wysyła nagłówki X-Frame-Options / CSP i zabrania osadzania w iframe. Wtedy zostaje przycisk poniżej — otwiera oryginał w nowej karcie.",
+        "info.open": "Otwórz oryginał: vibes.ai",
+        "info.close": "Zamknij",
+        "info.foot": "Nieoficjalna nakładka przeglądarkowa. Wszystkie treści i znaki towarowe należą do vibes.ai / Meta. Projekt nie jest z nimi powiązany.",
+        "doc.title": "vibes.ai · mobile viewer"
+      },
+      en: {
+        "bar.tag": "mobile viewer",
+        "act.reload": "Reload",
+        "act.external": "Open the original in a new tab",
+        "act.info": "Info",
+        "loader": "Loading vibes.ai…",
+        "mode.fit": "Fit",
+        "mode.pan": "1:1",
+        "dock.hint": "Swipe to scroll the page inside the frame",
+        "info.title": "How does this work?",
+        "info.p1": "<b>This is not a copy.</b> The wrapper stores no vibes.ai content — the original site is loaded live from vibes.ai into the frame below the bar.",
+        "info.p2": "<b>“Fit” mode</b> scales the desktop site down to your phone width (zoom − / + changes the virtual width). <b>“1:1” mode</b> shows the site at full crispness — you can then pan horizontally too.",
+        "info.p3": "<b>Blank frame or a refusal message?</b> That means vibes.ai sends X-Frame-Options / CSP headers and forbids iframe embedding. Use the button below to open the original in a new tab.",
+        "info.open": "Open the original: vibes.ai",
+        "info.close": "Close",
+        "info.foot": "Unofficial browser wrapper. All content and trademarks belong to vibes.ai / Meta. This project is not affiliated with them.",
+        "doc.title": "vibes.ai · mobile viewer"
+      }
+    };
+    var lang = "pl";
+    try {
+      var saved = localStorage.getItem("vibesviewer.lang");
+      if (saved && DICT[saved]) lang = saved;
+      else if (!/pl/i.test(navigator.language || "")) lang = "en";
+    } catch (e) { /* ignore */ }
+
+    function t(k) { return (DICT[lang] && DICT[lang][k]) || DICT.en[k] || k; }
+    function applyLang() {
+      document.documentElement.lang = lang;
+      document.title = t("doc.title");
+      document.querySelectorAll("[data-i18n]").forEach(function (el) { el.textContent = t(el.getAttribute("data-i18n")); });
+      document.querySelectorAll("[data-i18n-html]").forEach(function (el) { el.innerHTML = t(el.getAttribute("data-i18n-html")); });
+      document.querySelectorAll("[data-i18n-aria]").forEach(function (el) { el.setAttribute("aria-label", t(el.getAttribute("data-i18n-aria"))); });
+      document.querySelectorAll("[data-lang]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-lang") === lang)); });
+    }
+    document.addEventListener("click", function (e) {
+      var b = e.target.closest("[data-lang]");
+      if (!b) return;
+      lang = b.getAttribute("data-lang");
+      try { localStorage.setItem("vibesviewer.lang", lang); } catch (err) { /* ignore */ }
+      applyLang();
+    });
+    applyLang();
+
+    /* ================= frame fitting ================= */
+    var stage = document.getElementById("stage");
+    var pan = document.getElementById("pan");
+    var frame = document.getElementById("frame");
+    var zoomLabel = document.getElementById("zoomLabel");
+    var loader = document.getElementById("loader");
+
+    var W = 1280;              /* virtual desktop width the iframe renders at */
+    var W_MIN = 360, W_MAX = 1920;
+    var mode = "fit";
+
+    function layout() {
+      var r = stage.getBoundingClientRect();
+      if (mode === "fit") {
+        var scale = r.width / W;
+        pan.classList.remove("is-pan");
+        frame.style.width = W + "px";
+        frame.style.height = Math.ceil(r.height / scale) + "px";
+        frame.style.transform = "scale(" + scale + ")";
+        zoomLabel.textContent = Math.round(scale * 100) + "%";
+      } else {
+        pan.classList.add("is-pan");
+        frame.style.width = W + "px";
+        frame.style.height = r.height + "px";
+        frame.style.transform = "none";
+        zoomLabel.textContent = "1:1";
+      }
+    }
+    function setMode(m) {
+      mode = m;
+      document.querySelectorAll("[data-mode]").forEach(function (b) {
+        b.setAttribute("aria-pressed", String(b.getAttribute("data-mode") === m));
+      });
+      layout();
+    }
+    function zoom(dir) {
+      var step = Math.max(80, Math.round(W * 0.16 / 10) * 10);
+      W = Math.min(W_MAX, Math.max(W_MIN, W + dir * step));
+      layout();
+    }
+
+    document.querySelectorAll("[data-mode]").forEach(function (b) {
+      b.addEventListener("click", function () { setMode(b.getAttribute("data-mode")); });
+    });
+    document.getElementById("zoomIn").addEventListener("click", function () { zoom(-1); });
+    document.getElementById("zoomOut").addEventListener("click", function () { zoom(1); });
+
+    window.addEventListener("resize", layout);
+    window.addEventListener("orientationchange", function () { setTimeout(layout, 120); });
+    if (window.visualViewport) window.visualViewport.addEventListener("resize", layout);
+    layout();
+
+    /* ================= loader + reload ================= */
+    function showLoader() { loader.classList.remove("is-off"); }
+    function hideLoader() { loader.classList.add("is-off"); }
+    frame.addEventListener("load", function () { setTimeout(hideLoader, 350); });
+    /* if the load event never arrives (blocked / dead network), stop spinning */
+    setTimeout(hideLoader, 12000);
+
+    document.getElementById("reloadBtn").addEventListener("click", function () {
+      showLoader();
+      frame.src = "https://vibes.ai/";
+    });
+
+    /* ================= info sheet ================= */
+    var sheet = document.getElementById("infoSheet");
+    function openSheet() { sheet.hidden = false; requestAnimationFrame(function () { sheet.classList.add("is-open"); }); }
+    function closeSheet() { sheet.classList.remove("is-open"); setTimeout(function () { sheet.hidden = true; }, 380); }
+    document.getElementById("infoBtn").addEventListener("click", openSheet);
+    sheet.addEventListener("click", function (e) { if (e.target.closest("[data-close]")) closeSheet(); });
+    sheet.addEventListener("keydown", function (e) { if (e.key === "Escape") closeSheet(); });
+  })();
+  </script>
 </body>
 </html>

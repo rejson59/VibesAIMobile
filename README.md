@@ -1,66 +1,41 @@
 # VibesAIMobile
 
-**vibes.ai — wersja mobilna.** Mobile-first rebuild of the [vibes.ai](https://vibes.ai) landing
-page, plus an interactive mock of the Vibes mobile app. Pure HTML/CSS/JS, no build step.
+**Mobilna nakładka na oryginalną stronę [vibes.ai](https://vibes.ai).**
+Oficjalna strona nie ma wersji mobilnej, więc ten projekt wyświetla ją
+po telefonowemu: żywa witryna vibes.ai jest ładowana w ramce dopasowanej
+do ekranu telefonu.
 
-> ⚠️ Unofficial concept / demo. Not affiliated with Meta or vibes.ai.
-> All imagery is AI-generated placeholder art.
+> To **nie jest kopia** treści — nic nie jest przechowywane ani serwowane
+> z tego repozytorium. Przeglądarka użytkownika pobiera stronę bezpośrednio
+> z vibes.ai. Nieoficjalny projekt, bez powiązań z vibes.ai / Meta.
 
-## Run it
+## Uruchomienie
 
 ```bash
-python3 -m http.server 8080        # or any static server
+python3 -m http.server 8080     # albo dowolny serwer statyczny
 # → http://localhost:8080
 ```
 
-Open it on a phone, or on desktop — wide viewports present the very same mobile
-layout inside a device bezel (append `?noframe=1` for full width).
+## Jak to działa
 
-## Pages
+- `index.html` — pojedynczy plik: pasek górny, ramka ze stroną, dolny dok ze sterowaniem.
+- **Tryb „Dopasuj”** — pulpitowy layout (domyślnie 1280 px szerokości) jest skalowany
+  do szerokości ekranu telefonu; zoom **− / +** zmienia wirtualną szerokość (360–1920 px).
+- **Tryb „1:1”** — strona w natywnej ostrości, z przewijaniem także w poziomie.
+- Przyciski: odśwież ramkę, otwórz oryginał w nowej karcie, pomoc (PL/EN).
+- UI nakładki jest mobile-first: safe-area insets, cele dotykowe ≥46 px, dolny dok
+  w strefie kciuka, `prefers-reduced-motion`.
 
-| Page         | What it is                                                                 |
-| ------------ | -------------------------------------------------------------------------- |
-| `index.html` | Mobile landing: hero, community rail, ingredients / timeline / workflows, mobile perks, app-demo card, CTA, cookie sheet, sticky download dock |
-| `app.html`   | Interactive app mock: snapping feed (like / remix / share), create screen with simulated render, projects, profile |
+## Ograniczenie (ważne!)
 
-## Mobile-first details
+Jeżeli vibes.ai wysyła nagłówki **X-Frame-Options** lub **Content-Security-Policy:
+frame-ancestors**, przeglądarka odmówi wyświetlenia strony w iframe (pusta ramka /
+komunikat). To decyzja po stronie vibes.ai i nie da się jej obejść z poziomu
+przeglądarki bez proxy. Nakładka wyjaśnia to w panelu „Info” i oferuje przycisk
+„Otwórz oryginał”.
 
-- Base CSS **is** the phone layout; `viewport-fit=cover` + `env(safe-area-inset-*)` for notches
-  and home-indicator safe areas.
-- Thumb-zone UI: sticky bottom dock, bottom tab bar, ≥48 px touch targets, no hover-only states.
-- Native feel: scroll-snap feed & carousels, momentum scrolling, full-screen menu sheet,
-  sticky cookie sheet, `prefers-reduced-motion` respected.
-- Installable PWA: `manifest.webmanifest`, icons (incl. maskable), `sw.js` network-first
-  service worker → works offline after first visit.
-- i18n: **EN / PL** switcher (top bar, menu, profile). Default follows the browser language
-  (`pl*` → Polish), choice persisted in `localStorage`.
+## Historia
 
-## Structure
-
-```
-├── index.html          landing page
-├── app.html            app mock
-├── manifest.webmanifest  PWA manifest
-├── sw.js               offline service worker
-├── css/
-│   ├── base.css        tokens, reset, components, desktop phone frame
-│   ├── landing.css     landing page
-│   └── app.css         app mock
-├── js/
-│   ├── i18n.js         EN/PL dictionary + applier (data-i18n*)
-│   ├── frame.js        desktop device-bezel wiring
-│   ├── main.js         landing behaviour
-│   └── app.js          app-mock behaviour
-└── images/             generated art + PWA icons
-```
-
-## i18n usage
-
-```html
-<h1 data-i18n="hero.title">…</h1>          <!-- textContent -->
-<p  data-i18n-html="cookie.text">…</p>     <!-- innerHTML (trusted strings) -->
-<input data-i18n-ph="create.ph" />         <!-- placeholder -->
-<button data-i18n-aria="act.like">         <!-- aria-label -->
-```
-
-Add keys to both dictionaries in `js/i18n.js`.
+Wcześniejszy commit (`52ef62c`) zawierał zarzucony koncepcyjny redesign mobilny
+(zbudowany bez dostępu do oryginału). Został usunięty z drzewa roboczego na rzecz
+nakładki na żywą stronę; historia gita zachowuje go do wglądu.
